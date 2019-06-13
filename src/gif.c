@@ -1,0 +1,9 @@
+﻿
+
+
+
+void gifGet(void)
+{
+
+
+}
