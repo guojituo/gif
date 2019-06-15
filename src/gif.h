@@ -65,6 +65,41 @@ typedef struct {
 	u8 flag;		//标识符[1:1:1:2:3] m[7]局部颜色列表标志 i[6]交织标志 s[5]分类标志 r[4:3]保留，必须初始化为0 pixel[2:0]局部颜色列表大小
 }gifImageScreenDescriptor;
 
+//图形控制扩展(Graphic Control Extension)
+typedef struct {
+	u8 blockSize;
+	u8 flag;	//
+	u8 delay;	//Delay Time
+	u8 tcIndex;	//Transparent Color Index
+}gifGraphicControlExtension;
+
+//注释扩展(Comment Extension)
+typedef struct {
+	u8 blockSize;
+}gifCommentExtension;
+
+//图形文本扩展(Plain Text Extension)
+typedef struct {
+	u8 blockSize;	//固定值为 12
+	u16 tgLeftPos;	//Text Glid Left Position
+	u16 tgTopPos;	//Text Glid Top Position
+	u16 tgWidth;	//Text Glid Width
+	u16 tgHeight;	//Text Glid　Height
+	u8 ccWidth;		//Character Cell Width
+	u8 ccHeight;	//Character Cell Height
+	u8 tfci;		//Text Foreground Color Index
+	u8 tbci;		//Text Blackground Color Index
+	u8 *data;
+}gifPlainTextExtension;
+
+//应用程序扩展(Application Extension)
+typedef struct {
+	u8 blockSize;
+	u8 appIdentifier[8];			//Application Identifier (ASCII Code)
+	u8 appAuthenticationCode[3];	//Application Authentication Code (ASCII Code)
+}gifApplicationExtension;
+
+//
 typedef struct {
 	u32 size;	//file size
 	u8 header[GIF_HEADER_BYTES];	//Signature and Version
