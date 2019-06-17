@@ -3,6 +3,14 @@
 #include <string.h>
 #include "gif.h"
 
+#if defined(__GNUC__)	//GNUC >> GCC
+#define gifInfo(format, args...) printf(format, ##args)
+#elif defined(_MSC_VER) //Visual C++
+#define gifInfo(fotmat, ...) printf(fotmat, ##__VA_ARGS__)
+#else
+#define gifInfo(format, ...)
+#endif
+
 typedef FILE * GIF_HANDLE;
 
 static __inline GIF_HANDLE gifOpen(const char *fileName)
@@ -74,105 +82,105 @@ void gifReadExtension(GIF_HANDLE gifFp)
 
 	ret = gifRead(gifFp, (u8*)&label, 1);
 	if(ret!=1){
-		printf("read extension label fail.\n");
+		gifInfo("read extension label fail.\n");
 		return ;
 	}
 	
 	switch(label){
 	case _PLAIN_TEXT_LABEL:
-		printf("## Plain Text Label(0x%x) ##\n", label);
+		gifInfo("## Plain Text Label(0x%x) ##\n", label);
 
 		break;
 
 	case _GRAPHIC_CONTROL_LABEL:
-		printf("## Graphic Control Label(0x%x) ##\n", label);
+		gifInfo("## Graphic Control Label(0x%x) ##\n", label);
 		ret = gifRead(gifFp, (u8*)&blockSize, 1);
 		if(ret!=1){
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return ;
 		}
-		printf("Block Size:%d\n", blockSize);
+		gifInfo("Block Size:%d\n", blockSize);
 
 		ret = gifRead(gifFp, tmpBuf, blockSize);
 		if(ret != blockSize) {
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return ;
 		}
 
-		printf("DisposalMethod:0x%x\n", (tmpBuf[0]>>2)&0xf);
-		printf("I:0x%x\n", (tmpBuf[0]>>1)&0x01);
-		printf("T:0x%x\n", (tmpBuf[0]>>0)&0x01);
-		printf("DelayTime:%d\n", (tmpBuf[2]<<8)|tmpBuf[1]);
-		printf("Transparent Color Index:%d\n", tmpBuf[3]);
+		gifInfo("DisposalMethod:0x%x\n", (tmpBuf[0]>>2)&0xf);
+		gifInfo("I:0x%x\n", (tmpBuf[0]>>1)&0x01);
+		gifInfo("T:0x%x\n", (tmpBuf[0]>>0)&0x01);
+		gifInfo("DelayTime:%d\n", (tmpBuf[2]<<8)|tmpBuf[1]);
+		gifInfo("Transparent Color Index:%d\n", tmpBuf[3]);
 
 		//Block Terminator 0x0
 		ret = gifRead(gifFp, (u8*)tmpBuf, 1);
 		if(ret!=1){
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return ;
 		}
-		printf("Block Terminator:0x%x\n", tmpBuf[0]);
+		gifInfo("Block Terminator:0x%x\n", tmpBuf[0]);
 		break;
 
 	case _COMMENT_LABEL:
-		printf("## Comment Label(0x%x) ##\n", label);
+		gifInfo("## Comment Label(0x%x) ##\n", label);
 		break;
 
 	case _APPLICATION_EXTENSION_LABEL:
-		printf("## Application Extension Label(0x%x) ##\n", label);
+		gifInfo("## Application Extension Label(0x%x) ##\n", label);
 		ret = gifRead(gifFp, (u8*)&blockSize, 1);
 		if(ret!=1){
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return ;
 		}
-		printf("Block Size:%d\n", blockSize);
+		gifInfo("Block Size:%d\n", blockSize);
 		
 		ret = gifRead(gifFp, tmpBuf, blockSize);
 		if(ret != blockSize) {
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return ;
 		}
-		printf("Application Identifier:");
+		gifInfo("Application Identifier:");
 		for(i=0;i<8;i++){
-			printf("%c",tmpBuf[i]);
+			gifInfo("%c",tmpBuf[i]);
 		}
-		printf("\n");
+		gifInfo("\n");
 
-		printf("Application Authentication Code:");
+		gifInfo("Application Authentication Code:");
 		for(i=0;i<3;i++){
-			printf("%c", tmpBuf[i+8]);
+			gifInfo("%c", tmpBuf[i+8]);
 		}
-		printf("\n");
+		gifInfo("\n");
 
 		ret = gifRead(gifFp, (u8*)&lzwSize, 1);
 		if(ret!=1){
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return ;
 		}
-		printf("lzwSize:%d\n", lzwSize);
+		gifInfo("lzwSize:%d\n", lzwSize);
 		ret = gifRead(gifFp, (u8*)tmpBuf, lzwSize);
 		if(ret!=lzwSize){
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return; 
 		}
 		for(i=0;i<lzwSize;i++){
-			printf("0x%02x ", tmpBuf[i]);
-			if((i+1)%8==0) printf("  ");
-			if((i+1)%16==0) printf("\n");
+			gifInfo("0x%02x ", tmpBuf[i]);
+			if((i+1)%8==0) gifInfo("  ");
+			if((i+1)%16==0) gifInfo("\n");
 		}
-		printf("\n");
+		gifInfo("\n");
 
 		//Block Terminator 0x0
 		ret = gifRead(gifFp, (u8*)tmpBuf, 1);
 		if(ret!=1){
-			printf("gif read fail.\n");
+			gifInfo("gif read fail.\n");
 			return ;
 		}
-		printf("Block Terminator:0x%x\n", tmpBuf[0]);
+		gifInfo("Block Terminator:0x%x\n", tmpBuf[0]);
 		break;
 
 	default:
-		printf("not support label(0x%x)\n", label);
+		gifInfo("not support label(0x%x)\n", label);
 		break;
 	}
 
@@ -193,24 +201,24 @@ int gifDecode(const unsigned char *fileName)
 
 	gif = (gifImage*)malloc(sizeof(gifImage));
 	if(!gif) {
-		printf("gif image malloc fail.\n");
+		gifInfo("gif image malloc fail.\n");
 		return -1;
 	}
 	memset(gif, 0x0, sizeof(gifImage));
 
 	gifFp = gifOpen(fileName);
 	if(gifFp<=0) {
-		printf("gif file open fail.(%s)\n", fileName);
+		gifInfo("gif file open fail.(%s)\n", fileName);
 		free(gif);
 		return -1;
 	}
 
 	gif->size = gifCalcFileSize(gifFp);
-	printf("gif size: %d\n", gif->size);
+	gifInfo("gif size: %d\n", gif->size);
 
 	ret = gifRead(gifFp, (u8*)&gif->header, GIF_HEADER_BYTES);
 	if(ret != GIF_HEADER_BYTES) {
-		printf("gif read header data fail.(%d)\n", ret);
+		gifInfo("gif read header data fail.(%d)\n", ret);
 		goto ErrOut;
 	}
 
@@ -220,16 +228,16 @@ int gifDecode(const unsigned char *fileName)
 	//Logical Screen Descriptor.
 	ret = gifRead(gifFp, (u8*)&gif->lsd, GIF_LSD_BYTES);
 	
-	printf("\nLogical Screen Descriptor:\n");
-	printf("width: %d\n", gif->lsd.width);
-	printf("height: %d\n", gif->lsd.height);
-	printf("flag: %d ## m(%d) cr(%d) s(%d) pixel(%d)\n", gif->lsd.flag, \
+	gifInfo("\nLogical Screen Descriptor:\n");
+	gifInfo("width: %d\n", gif->lsd.width);
+	gifInfo("height: %d\n", gif->lsd.height);
+	gifInfo("flag: %d ## m(%d) cr(%d) s(%d) pixel(%d)\n", gif->lsd.flag, \
 		_LSD_M(gif->lsd.flag), \
 		_LSD_CR(gif->lsd.flag), \
 		_LSD_S(gif->lsd.flag), \
 		_LSD_PIXEL(gif->lsd.flag));
-	printf("bgIndex: %d\n", gif->lsd.bgIndex);
-	printf("pixelAspect: %d\n", gif->lsd.pixelAspect);
+	gifInfo("bgIndex: %d\n", gif->lsd.bgIndex);
+	gifInfo("pixelAspect: %d\n", gif->lsd.pixelAspect);
 	
 	//Global Color Table
 	if(_LSD_M(gif->lsd.flag)){
@@ -237,20 +245,20 @@ int gifDecode(const unsigned char *fileName)
 		gif->gctSize = ncolors * 3;
 		gif->gct = (u8*)malloc(gif->gctSize);
 		if(!gif->gct) {
-			printf(" gif Global Color Table malloc fail.\n");
+			gifInfo(" gif Global Color Table malloc fail.\n");
 			goto ErrOut;
 		}
 
 		ret = gifRead(gifFp, gif->gct, gif->gctSize);
 		if(ret != gif->gctSize) {
-			printf("get global color table fail.\n");
+			gifInfo("get global color table fail.\n");
 			goto ErrOut;
 		}
 
-		printf("\nGlobal Color Table:\n");
-		printf("ColorTableSize: %d\n", gif->gctSize);
+		gifInfo("\nGlobal Color Table:\n");
+		gifInfo("ColorTableSize: %d\n", gif->gctSize);
 		for(i=0; i<ncolors; i++){
-			printf("# %d #r:%d g:%d b:%d\n", i, gif->gct[i*3],gif->gct[i*3+1],gif->gct[i*3+2]);
+			gifInfo("# %d #r:%d g:%d b:%d\n", i, gif->gct[i*3],gif->gct[i*3+1],gif->gct[i*3+2]);
 		}
 	}
 
@@ -258,26 +266,26 @@ int gifDecode(const unsigned char *fileName)
 		//Image Descriptor	
 		ret = gifRead(gifFp, &intro, 1);
 		if(ret != 1) {
-			printf("intro read fail.\n");
+			gifInfo("intro read fail.\n");
 			goto ErrOut;
 		}
-		printf("\n");
-		printf(">> Descriptor:\n");
-		printf("intro:0x%x\n", intro);
+		gifInfo("\n");
+		gifInfo(">> Descriptor:\n");
+		gifInfo("intro:0x%x\n", intro);
 
 		switch(intro){
 		case GIF_INTRO_IMAGE:
 			ret = gifRead(gifFp, (u8*)&gif->isd, GIF_ISD_BYTES);
 			if(ret!=GIF_ISD_BYTES){
-				printf("read isd fail.\n");
+				gifInfo("read isd fail.\n");
 				goto ErrOut;
 			}
-			printf("Image Descriptor:\n");			
-			printf("xoffset: %d\n", gif->isd.xoffset);
-			printf("yoffset: %d\n", gif->isd.yoffset);
-			printf("width: %d\n", gif->isd.width);
-			printf("height: %d\n", gif->isd.height);
-			printf("flag: 0x%x m(%d) i(%d) s(%d) r(%d) pixel(%d)\n", gif->isd.flag,\
+			gifInfo("Image Descriptor:\n");
+			gifInfo("xoffset: %d\n", gif->isd.xoffset);
+			gifInfo("yoffset: %d\n", gif->isd.yoffset);
+			gifInfo("width: %d\n", gif->isd.width);
+			gifInfo("height: %d\n", gif->isd.height);
+			gifInfo("flag: 0x%x m(%d) i(%d) s(%d) r(%d) pixel(%d)\n", gif->isd.flag,\
 				_ISD_M(gif->isd.flag),\
 				_ISD_I(gif->isd.flag),\
 				_ISD_S(gif->isd.flag),\
@@ -290,52 +298,52 @@ int gifDecode(const unsigned char *fileName)
 				gif->lctSize = ncolors * 3;
 				gif->lct = (u8*)malloc(gif->lctSize);
 				if(!gif->lct) {
-					printf(" gif Local Color Table malloc fail.\n");
+					gifInfo(" gif Local Color Table malloc fail.\n");
 					goto ErrOut;
 				}
 
 				ret = gifRead(gifFp, gif->lct, gif->lctSize);
 				if(ret != gif->lctSize) {
-					printf("get local color table fail.\n");
+					gifInfo("get local color table fail.\n");
 					goto ErrOut;
 				}
 
-				printf("\nLocal Color Table:\n");
-				printf("ColorTableSize: %d\n", gif->lctSize);
+				gifInfo("\nLocal Color Table:\n");
+				gifInfo("ColorTableSize: %d\n", gif->lctSize);
 				for(i=0; i<ncolors; i++){
-					printf("# %d #r:%d g:%d b:%d\n", i, gif->lct[i*3],gif->lct[i*3+1],gif->lct[i*3+2]);
+					gifInfo("# %d #r:%d g:%d b:%d\n", i, gif->lct[i*3],gif->lct[i*3+1],gif->lct[i*3+2]);
 				}
 			}
 
 			ret = gifRead(gifFp, (u8*)&blockSize, 1);
 			if(ret!=1){
-				printf("gif read fail.\n");
+				gifInfo("gif read fail.\n");
 				goto ErrOut;
 
 			}
 			
-			printf("blockSize:%d\n", blockSize);
+			gifInfo("blockSize:%d\n", blockSize);
 			ret = gifRead(gifFp, (u8*)tmpBuf, blockSize);
 			if(ret!=blockSize){
-				printf("gif read fail.\n");
+				gifInfo("gif read fail.\n");
 				goto ErrOut;
 			}
 			for(i=0;i<blockSize;i++){
-				printf("0x%02x ", tmpBuf[i]);
-				if((i+1)%8==0) printf("  ");
-				if((i+1)%16==0) printf("\n");
+				gifInfo("0x%02x ", tmpBuf[i]);
+				if((i+1)%8==0) gifInfo("  ");
+				if((i+1)%16==0) gifInfo("\n");
 			}
-			printf("\n");
+			gifInfo("\n");
 
 			break;
 		
 		case GIF_INTRO_EXTENSION:
-			printf("Extension Descriptor  ");
+			gifInfo("Extension Descriptor  ");
 			gifReadExtension(gifFp);
 			break;
 
 		case GIF_INTRO_TRAILER:
-			printf("Trailer.\n");
+			gifInfo("Trailer.\n");
 			ret = 0;
 			break;
 		}
